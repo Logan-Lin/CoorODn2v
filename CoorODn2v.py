@@ -55,7 +55,7 @@ class CoorODn2v:
                     add_od_to_graph(graph, group.iloc[0]['cluster'], group.iloc[1]['cluster'])
                     tqdm_iter.update(1)
         
-        self.graph = nx.Graph
+        self.graph = nx.Graph()
         
         od_set = fetch_od(dataset)
         od_set.index = range(od_set.shape[0])
@@ -80,10 +80,12 @@ class CoorODn2v:
         result['cluster'] = kmeans_labels
         
         embeddings = []
-        for index, row in result.iterrows():
-            embed_row = self.n2v_wv.work2vec(str(row['cluster']))
-            embeddings.append(embed_row)
+        with tqdm(total=result.shape[0], desc='Predicting coordinate embeddings: ') as pbar:
+            for index, row in result.iterrows():
+                embed_row = self.n2v_wv.word_vec(str(row['cluster']))
+                embeddings.append(embed_row)
+                pbar.update(1)
         
         embeddings = pd.DataFrame(embeddings, columns=['embed_%d' % i for i in range(self.dimensions)])
         
-        return pd.concat([result, embeddings], axis=1)
+        return embeddings
