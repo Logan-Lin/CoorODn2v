@@ -61,14 +61,17 @@ class CoorODn2v:
         od_set.index = range(od_set.shape[0])
         
         self.kmeans = KMeans(n_clusters=self.clusters, n_jobs=workers).fit(od_set[['longitude', 'latitude']])
+        print('Fitting KMeans model...')
         od_set['cluster'] = self.kmeans.labels_
         
         add_dataset_to_graph(od_set, self.graph)
         
         n2v = Node2Vec(self.graph, dimensions=self.dimensions, walk_length=10, num_walks=200, workers=workers, weight_key='weight')
+        print('Processing random walk...')
         model = n2v.fit(window=10, min_count=1, batch_words=4)
         
         self.n2v_wv = model.wv
+        print('Finished fitting all models!')
         
     def predict(self, test_set):
         result = pd.DataFrame(test_set, copy=True)
