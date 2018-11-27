@@ -25,6 +25,7 @@ class CoorODn2v:
         self.kmeans = None
         self.n2v_wv = None
         self.graph = None
+        self.od_set = None
     
     def fit(self, dataset, walk_length=10, num_walks=200, weight_key='weight', workers=47):
         def fetch_od(dataset: pd.DataFrame):
@@ -57,14 +58,14 @@ class CoorODn2v:
         
         self.graph = nx.Graph()
         
-        od_set = fetch_od(dataset)
-        od_set.index = range(od_set.shape[0])
+        self.od_set = fetch_od(dataset)
+        self.od_set.index = range(self.od_set.shape[0])
         
         self.kmeans = KMeans(n_clusters=self.clusters, n_jobs=workers).fit(od_set[['longitude', 'latitude']])
         print('Fitting KMeans model...')
-        od_set['cluster'] = self.kmeans.labels_
+        self.od_set['cluster'] = self.kmeans.labels_
         
-        add_dataset_to_graph(od_set, self.graph)
+        add_dataset_to_graph(self.od_set, self.graph)
         
         n2v = Node2Vec(self.graph, dimensions=self.dimensions, walk_length=10, num_walks=200, workers=workers, weight_key='weight')
         print('Processing random walk...')
@@ -74,11 +75,10 @@ class CoorODn2v:
         print('Finished fitting all models!')
         
     def predict(self, test_set):
-        result = pd.DataFrame(test_set, copy=True)
-        
         if self.kmeans is None:
             raise ValueError('Model is not trained yet.')
-        
+            
+        result = pd.DataFrame(test_set, copy=True)
         kmeans_labels = self.kmeans.predict(result[['longitude', 'latitude']])
         result['cluster'] = kmeans_labels
         
@@ -92,3 +92,13 @@ class CoorODn2v:
         embeddings = pd.DataFrame(embeddings, columns=['embed_%d' % i for i in range(self.dimensions)])
         
         return embeddings
+    
+    def plot_clusters(self, figsize=(10, 10)):
+        if self.od_set is None:
+            raise ValueError('Model is not trained yet.')
+        
+        plt.figure(figsize=figsize)
+        plt.scatter(self.od_set['longitude'], self.od_set['latitude'], alpha=0.2, s=1, c='#3677af')
+        centers = self.kmeans.cluster_centers_
+        plt.scatter(centers[:, 0], centers[:, 1], c='red')
+        plt.show()
