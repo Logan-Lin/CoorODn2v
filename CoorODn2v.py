@@ -98,7 +98,7 @@ class CoorODn2v:
         
         return embeddings
     
-    def plot_clusters(self, figsize=(10, 10), dpi=100, draw_arrows=False):
+    def plot_clusters(self, figsize=(10, 10), dpi=100, draw_arrows=False, thre=200, norm=300, color='#f9f568'):
         if self.od_set is None:
             raise ValueError('Model is not trained yet.')
         
@@ -106,7 +106,7 @@ class CoorODn2v:
         ax = plt.gca()
         
         if draw_arrows:
-            self.draw_graph_arrows(ax, thre=200, norm=300, color='#f9f568')
+            self.draw_graph_arrows(ax, thre=thre, norm=norm, color=color)
         
         plt.scatter(self.od_set['longitude'], self.od_set['latitude'], alpha=0.2, s=1, c='#3677af')
         centers = self.kmeans.cluster_centers_
